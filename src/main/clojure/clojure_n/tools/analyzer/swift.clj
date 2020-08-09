@@ -1,18 +1,39 @@
 (ns clojure-n.tools.analyzer.swift
+  (:refer-clojure :exclude [macroexpand-1 var?])
   (:require [clojure.tools.analyzer :as ana]
-            [clojure.tools.analyzer.env :as env]))
+            [clojure.tools.analyzer.env :as env]
+            [clojure.tools.analyzer.passes :refer [schedule]]))
 
-;; TODO
-(declare create-var)
+(defn macroexpand-1 [form env]
+  ;; TODO: Implement
+  form)
 
-;; TODO
-(declare parse)
+(defn create-var
+  "Creates a var map for sym and returns it."
+  [sym {:keys [ns]}]
+  (with-meta {:op   :var
+              :name sym
+              :ns   ns}
+             (meta sym)))
 
-;; TODO
-(declare -analyze)
+(defn var?
+  "Returns true if obj represent a var form as returned by create-var"
+  [x]
+  (= :var (:op x)))
 
-;; TODO
-(declare run-passes)
+(defmulti parse
+  "Extension to tools.analyzer/-parse for cljn special forms"
+  (fn [[op & rest] env] op))
+
+(defmethod parse :default
+  [form env]
+  (ana/-parse form env))
+
+(defn run-passes
+  "Function that will be invoked on the AST tree immediately after it has been constructed,
+   by default set-ups and runs the default passes declared in #'default-passes"
+  [ast]
+  ast)
 
 (defn global-env [] {})
 
@@ -22,4 +43,4 @@
             ana/parse parse
             ana/var? var?]
     (env/ensure (global-env)
-      (run-passes (-analyze form env)))))
+      (run-passes (ana/analyze form env)))))
