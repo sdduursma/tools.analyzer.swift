@@ -4,9 +4,11 @@
             [clojure.tools.analyzer.env :as env]
             [clojure.tools.analyzer.passes :refer [schedule]]))
 
+(alias 'c.c 'clojure.core)
+
 (defn macroexpand-1 [form env]
   ;; TODO: Implement
-  form)
+  (c.c/macroexpand-1 form))
 
 (defn create-var
   "Creates a var map for sym and returns it."
