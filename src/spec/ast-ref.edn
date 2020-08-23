@@ -1,0 +1,25 @@
+{:all-keys
+ [[:op "The node op"]
+  [:form "The clojure form from which the node originated"]
+  [:env "The environment map"]
+  ^:optional
+  [:children "A vector of keywords, representing the children nodes of this node, in order of evaluation"]
+  ^:optional
+  [:raw-forms "If this node's :form has been macroexpanded, a sequence of all the intermediate forms from the original form to the macroexpanded form"]
+  ^:optional
+  [:top-level "`true` if this is the root node"]
+  [:tag "The tag of the expression"]
+  ^:optional
+  [:ignore-tag "`true` if this node returns a statement rather than an expression"]]
+
+ :node-keys
+ [{:op :deftype
+   :doc "Node for a deftype* special-form expression"
+   :keys [[:form "`(deftype* name class-name [arg*] :implements [protocol*] method*)`"]
+          [:swift-protocols "A set of Swift protocols implemented by the type"]
+          [:name "Symbol name of the deftype"]
+          [:class-name "A class name for the deftype (TODO: is it a string? is it namespaced?)"]
+          ^children
+          [:fields "A vector of :binding AST nodes with :local :field representing the deftype fields"]
+          ^:children
+          [:methods "A vector :method AST nodes representing the deftype methods"]]}]}
