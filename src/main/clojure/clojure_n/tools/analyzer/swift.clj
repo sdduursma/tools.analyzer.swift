@@ -2,7 +2,8 @@
   (:refer-clojure :exclude [macroexpand-1 var?])
   (:require [clojure.tools.analyzer :as ana]
             [clojure.tools.analyzer.env :as env]
-            [clojure.tools.analyzer.passes :refer [schedule]]))
+            [clojure.tools.analyzer.passes :refer [schedule]]
+            [clojure.tools.analyzer.utils :refer [dissoc-env]]))
 
 (alias 'c.c 'clojure.core)
 
@@ -26,6 +27,67 @@
 (defmulti parse
   "Extension to tools.analyzer/-parse for cljn special forms"
   (fn [[op & rest] env] op))
+
+(defn analyze-method-impls
+  [[method [this & params :as args] & body :as form] env]
+  (when-let [error-msg (cond
+                         (not (symbol? method))
+                         (str "Method method must be a symbol, had: " (class method))
+                         (not (vector? args))
+                         (str "Parameter listing should be a vector, had: " (class args))
+                         (not (first args))
+                         (str "Must supply at least one argument for 'this' in: " method))]
+    (throw (ex-info error-msg
+                    (merge {:form     form
+                            :in       (:this env)
+                            :method   method
+                            :args     args}
+                           (-source-info form env)))))
+  (let [meth        (cons (vec params) body) ;; this is an implicit arg
+        this-expr   {:name  this
+                     :env   env
+                     :form  this
+                     :op    :binding
+                     :o-tag (:this env)
+                     :tag   (:this env)
+                     :local :this}
+        env         (assoc-in (dissoc env :this) [:locals this] (dissoc-env this-expr))
+        method-expr (analyze-fn-method meth env)]
+    (assoc (dissoc method-expr :variadic?)
+      :op       :method
+      :form     form
+      :this     this-expr
+      :name     (symbol (name method))
+      :children (into [:this] (:children method-expr)))))
+
+(defmethod parse 'deftype*
+  ;; TODO: Is class-name needed?
+  [[op name class-name fields _ swift-protocols methods :as form] env]
+  (let [fields-expr  (mapv (fn [name]
+                             {:env     env
+                              :form    name
+                              :name    name
+                              :mutable (let [m (meta name)]
+                                         (or (and (:unsynchronized-mutable m)
+                                                  :unsynchronized-mutable)
+                                             (and (:volatile-mutable m)
+                                                  :volatile-mutable)))
+                              :local   :field
+                              :op      :binding})
+                           fields)
+        menv (assoc env
+               :context :ctx/expr
+               :locals  (zipmap fields (map dissoc-env fields-expr))
+               :this    class-name)
+
+        ;; [opts methods] (parse-opts+methods methods)
+        methods (mapv #(assoc (analyze-method-impls % menv) :interfaces interfaces)
+                      methods)]
+    {:op     op
+     :env    env
+     :form   form
+     :name   name
+     :fields fields-expr}))
 
 (defmethod parse :default
   [form env]

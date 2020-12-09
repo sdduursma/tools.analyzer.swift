@@ -22,4 +22,18 @@
           ^children
           [:fields "A vector of :binding AST nodes with :local :field representing the deftype fields"]
           ^:children
-          [:methods "A vector :method AST nodes representing the deftype methods"]]}]}
+          [:methods "A vector :method AST nodes representing the deftype methods"]]}
+  {:op   :method
+   :doc  "Node for a method in a deftype* or reify* special-form expression"
+   :keys [[:form "`(method [this arg*] body*)`"]
+          [:bridges "A list of signature for bridge methods to emit"]
+          [:interface "The interface (or Object) this method belongs to"]
+          ^:children
+          [:this "A :binding AST node with :local :this representing the \"this\" local"]
+          [:loop-id "Unique symbol identifying this method as a target for recursion"]
+          [:name "The symbol name of this method"]
+          ^:children
+          [:params "A vector of AST :binding nodes with :local :arg representing the arguments of the method"]
+          [:fixed-arity "The number of args this method takes"]
+          ^:children
+          [:body "Synthetic :do node (with :body? `true`) representing the body of this method"]]}]}
