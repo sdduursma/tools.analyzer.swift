@@ -16,9 +16,11 @@
  [{:op :deftype
    :doc "Node for a deftype* special-form expression"
    :keys [[:form "`(deftype* name class-name [arg*] :implements [protocol*] method*)`"]
-          [:swift-protocols "A set of Swift protocols implemented by the type"]
           [:name "Symbol name of the deftype"]
           [:class-name "A class name for the deftype (TODO: is it a string? is it namespaced?)"]
+          ^:optional
+          [:nsobject "Symbol name of NSObject, if the type inherits from it."]
+          [:swift-protocols "A set of Swift protocols implemented by the type"]
           ^children
           [:fields "A vector of :binding AST nodes with :local :field representing the deftype fields"]
           ^:children
@@ -27,7 +29,7 @@
    :doc  "Node for a method in a deftype* or reify* special-form expression"
    :keys [[:form "`(method [this arg*] body*)`"]
           [:bridges "A list of signature for bridge methods to emit"]
-          [:interface "The interface (or Object) this method belongs to"]
+          ;; TODO: Add protocol or swift-protocol?
           ^:children
           [:this "A :binding AST node with :local :this representing the \"this\" local"]
           [:loop-id "Unique symbol identifying this method as a target for recursion"]

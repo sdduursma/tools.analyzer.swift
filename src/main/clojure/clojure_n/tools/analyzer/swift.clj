@@ -3,7 +3,7 @@
   (:require [clojure.tools.analyzer :as ana]
             [clojure.tools.analyzer.env :as env]
             [clojure.tools.analyzer.passes :refer [schedule]]
-            [clojure.tools.analyzer.utils :refer [dissoc-env]]))
+            [clojure.tools.analyzer.utils :refer [dissoc-env -source-info]]))
 
 (alias 'c.c 'clojure.core)
 
@@ -52,7 +52,7 @@
                      :tag   (:this env)
                      :local :this}
         env         (assoc-in (dissoc env :this) [:locals this] (dissoc-env this-expr))
-        method-expr (analyze-fn-method meth env)]
+        method-expr (ana/analyze-fn-method meth env)]
     (assoc (dissoc method-expr :variadic?)
       :op       :method
       :form     form
@@ -62,8 +62,11 @@
 
 (defmethod parse 'deftype*
   ;; TODO: Is class-name needed?
-  [[op name class-name fields _ swift-protocols methods :as form] env]
-  (let [fields-expr  (mapv (fn [name]
+  [[op name class-name fields _ swift-protocols-or-nsobject & methods :as form] env]
+  ;; TODO: Refer to NSObject using its fully qualified name?
+  (let [swift-protocols-or-nsobject (set swift-protocols-or-nsobject)
+        swift-protocols (disj swift-protocols-or-nsobject 'NSObject)
+        fields-expr  (mapv (fn [name]
                              {:env     env
                               :form    name
                               :name    name
@@ -80,14 +83,21 @@
                :locals  (zipmap fields (map dissoc-env fields-expr))
                :this    class-name)
 
+        ;; TODO: Add support for options:
         ;; [opts methods] (parse-opts+methods methods)
-        methods (mapv #(assoc (analyze-method-impls % menv) :interfaces interfaces)
-                      methods)]
-    {:op     op
-     :env    env
-     :form   form
-     :name   name
-     :fields fields-expr}))
+        methods (mapv #(analyze-method-impls % menv) methods)]
+    (cond-> {:op              :deftype
+             :env             env
+             :form            form
+             :name            name
+             :class-name      class-name
+             ;; TODO: Refer to NSObject using its fully qualified name?
+             :swift-protocols swift-protocols
+             :fields          fields-expr
+             :methods         methods}
+
+            (swift-protocols-or-nsobject 'NSObject)
+            (assoc :nsobject (swift-protocols-or-nsobject 'NSObject)))))
 
 (defmethod parse :default
   [form env]
