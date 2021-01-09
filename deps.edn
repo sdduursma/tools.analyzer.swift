@@ -1,2 +1,2 @@
 {:paths ["src/main/clojure"]
- :deps {org.clojure/tools.analyzer {:local/root "../../clojure/tools.analyzer"}}}
+ :deps {org.clojure/tools.analyzer {:local/root "../../clojure-n/tools.analyzer"}}}
