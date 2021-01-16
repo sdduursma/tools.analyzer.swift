@@ -54,17 +54,30 @@
         env         (assoc-in (dissoc env :this) [:locals this] (dissoc-env this-expr))
         method-expr (ana/analyze-fn-method meth env)]
     (assoc (dissoc method-expr :variadic?)
-      :op       :method
-      :form     form
-      :this     this-expr
-      :name     (symbol (name method))
-      :children (into [:this] (:children method-expr)))))
+      :op                   :method
+      :form                 form
+      :protocol-or-nsobject (:protocol-or-nsobject env)
+      :this                 this-expr
+      :name                 (symbol (name method))
+      :children             (into [:this] (:children method-expr)))))
+
+(defn analyze-type-spec [[protocol-or-nsobject & methods :as form] env]
+  (let [methods-env (assoc env
+                      :protocol-or-nsobject protocol-or-nsobject
+                      :context :ctx/expr)
+        methods (mapv #(analyze-method-impls % methods-env) methods)]
+    {:op                   :type-spec
+     :form                 form
+     :protocol-or-nsobject protocol-or-nsobject
+     :methods              methods
+     :children             [:methods]
+     :env                  env}))
 
 (defmethod parse 'deftype*
   ;; TODO: Is class-name needed?
-  [[op name class-name fields _ swift-protocols-or-nsobject & methods :as form] env]
-  ;; TODO: Refer to NSObject using its fully qualified name?
-  (let [swift-protocols-or-nsobject (set swift-protocols-or-nsobject)
+  [[op name class-name fields _ & specs :as form] env]
+  (let [swift-protocols-or-nsobject (set (mapv first specs))
+        ;; TODO: Refer to NSObject using its fully qualified name?
         swift-protocols (disj swift-protocols-or-nsobject 'NSObject)
         fields-expr  (mapv (fn [name]
                              {:env     env
@@ -78,14 +91,12 @@
                               :local   :field
                               :op      :binding})
                            fields)
-        menv (assoc env
-               :context :ctx/expr
-               :locals  (zipmap fields (map dissoc-env fields-expr))
-               :this    class-name)
-
+        specs-env (assoc env
+                    :locals  (zipmap fields (map dissoc-env fields-expr))
+                    :this    class-name)
+        specs-expr (mapv #(analyze-type-spec % specs-env) specs)
         ;; TODO: Add support for options:
-        ;; [opts methods] (parse-opts+methods methods)
-        methods (mapv #(analyze-method-impls % menv) methods)]
+        #_#_[opts methods] (parse-opts+methods methods)]
     (cond-> {:op              :deftype
              :env             env
              :form            form
@@ -94,7 +105,8 @@
              ;; TODO: Refer to NSObject using its fully qualified name?
              :swift-protocols swift-protocols
              :fields          fields-expr
-             :methods         methods}
+             :specs           specs-expr
+             :children        [:fields :specs]}
 
             (swift-protocols-or-nsobject 'NSObject)
             (assoc :nsobject (swift-protocols-or-nsobject 'NSObject)))))

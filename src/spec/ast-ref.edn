@@ -23,12 +23,19 @@
           [:swift-protocols "A set of Swift protocols implemented by the type"]
           ^children
           [:fields "A vector of :binding AST nodes with :local :field representing the deftype fields"]
+          ^children
+          [:specs "A vector of :type-spec AST nodes representing the deftype specs"]]}
+  {:op :type-spec
+   :doc "Node for a spec inside a deftype* or reify* special-form expression"
+   :keys [[:form "(protocol-or-NSObject method*)"]
+          [:protocol-or-nsobject "Symbol name of the protocol (or NSObject) that the type implements"]
           ^:children
           [:methods "A vector :method AST nodes representing the deftype methods"]]}
   {:op   :method
    :doc  "Node for a method in a deftype* or reify* special-form expression"
    :keys [[:form "`(method [this arg*] body*)`"]
           [:bridges "A list of signature for bridge methods to emit"]
+          [:protocol-or-nsobject "The protocol (or NSObject) this method belongs to"]
           ;; TODO: Add protocol or swift-protocol?
           ^:children
           [:this "A :binding AST node with :local :this representing the \"this\" local"]
