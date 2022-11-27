@@ -115,36 +115,11 @@
   [form env]
   (ana/-parse form env))
 
-(def default-passes
-  "Set of passes that will be run by default on the AST by #'run-passes"
-  #{#'warn-on-reflection
-    #'warn-earmuff
-
-    #'uniquify-locals
-
-    #'source-info
-    #'elide-meta
-    #'constant-lift
-
-    #'trim
-
-    #'box
-
-    #'analyze-host-expr
-    #'validate-loop-locals
-    #'validate
-    #'infer-tag
-
-    #'classify-invoke})
-
-(def scheduled-default-passes
-  (schedule default-passes))
-
 (defn run-passes
   "Function that will be invoked on the AST tree immediately after it has been constructed,
    by default set-ups and runs the default passes declared in #'default-passes"
   [ast]
-  (scheduled-default-passes ast))
+  ast)
 
 (defn global-env [] {})
 
