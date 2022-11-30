@@ -1,3 +1,3 @@
 {:paths ["src/main/clojure"]
- :deps {org.clojure/tools.analyzer {:git/url "https://github.com/clojure/tools.analyzer.git"
-                                    :git/sha "8da56679bdec0718e16801653758af9c51c06ca2"}}}
+ :deps {org.clojure/tools.analyzer {:git/url "https://github.com/clojure-n/tools.analyzer.git"
+                                    :git/sha "661f779ae01b44474c3b132f987ca48d7cde1450"}}}
