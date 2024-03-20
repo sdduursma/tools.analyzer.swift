@@ -1,4 +1,4 @@
-(ns clojure-n.tools.analyzer.swift
+(ns clojureswift.tools.analyzer.swift
   (:refer-clojure :exclude [macroexpand-1 var?])
   (:require [clojure.tools.analyzer :as ana]
             [clojure.tools.analyzer.env :as env]
